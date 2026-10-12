@@ -1,3 +1,7 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # PdfCraft — instructions for agents
 
 PdfCraft is a clean-room, open-source, Rust-native PDF application targeting Adobe Acrobat Pro parity. It runs natively on macOS, Windows, Linux and FreeBSD, and on the web via WASM. It is the sibling of `../photocraft` (a Photoshop-class editor) and follows the same conventions.
@@ -33,6 +37,17 @@ PdfCraft is a clean-room, open-source, Rust-native PDF application targeting Ado
 - **Rust only** in the product and build (`xtask`). No handwritten JS/TS.
 - **Quality gates** before every commit: `cargo fmt --check`, `cargo clippy --workspace -- -D warnings`, `cargo test --workspace`, and the wasm check once `xtask ci` exists (M0).
 - **Commits:** one task id per commit (e.g. `M1.4: xref stream reader`). Commit only green states. End messages with the attribution line required by the environment.
+
+## Build, test, gates
+- Rust 1.95+. `cargo xtask` is an alias for `cargo run -p xtask --`; `cargo xtask` with no args lists every subcommand.
+- `cargo xtask ci` runs all gates in order (fmt, clippy, test, layers, wasm, assets, deny, parity) and stops at the first failure. Individual gates: `cargo xtask layers`, `cargo xtask wasm`, `cargo xtask assets`, `cargo xtask deny`.
+- One crate's tests: `cargo test -p pdfcraft-cos`. One test: `cargo test -p pdfcraft-cos <name_substring>`. UI control tests: `cargo test -p pdfcraft-ui-egui --test control`.
+- `cargo xtask models` fetches the OCR models Scan & OCR needs. `cargo xtask corpus` + `cargo xtask check` run the pdf.js-corpus robustness sweep against `xtask/baselines`.
+
+## Layout
+- `crates/` are the `pdfcraft-*` library crates; `crates/engine` is the façade every frontend uses (sessions, edits, undo, save, tool catalogue) and `crates/automation` exposes it as the headless tool table / MCP server. `crates/ui-egui` is the only UI crate.
+- `apps/`: `pdfcraft` (desktop), `pdfcraft-cli` (headless runner, MCP, UI control client), `pdfcraft-web` (WASM).
+- `vendor/` holds patched forks (hayro*, lopdf, egui-wgpu, winit); see `vendor/README.md` for the numbered patches before changing them.
 
 ## Running and looking at the app
 - `cargo run -p pdfcraft -- <file.pdf>` opens the desktop app.

@@ -218,6 +218,8 @@ pub fn install_fonts_for(ctx: &egui::Context, cjk: CjkPreference) {
 pub const SYSTEM_FALLBACK: &str = "system-fallback";
 /// The name of the installed Devanagari (Hindi) face [`installed_font_definitions`] may add.
 pub const SYSTEM_DEVANAGARI_FALLBACK: &str = "system-devanagari-fallback";
+/// The name of the installed Hangul (Korean) face [`installed_font_definitions`] may add.
+pub const SYSTEM_HANGUL_FALLBACK: &str = "system-hangul-fallback";
 
 /// What [`install_fonts_for`] installs: [`font_definitions_for`], then, on desktop, one face
 /// already installed on this machine. It only draws characters no embedded face has.
@@ -245,6 +247,13 @@ pub fn installed_font_definitions(cjk: CjkPreference) -> FontDefinitions {
             fonts.font_data.insert(SYSTEM_DEVANAGARI_FALLBACK.to_owned(), data);
             for stack in fonts.families.values_mut() {
                 stack.push(SYSTEM_DEVANAGARI_FALLBACK.to_owned());
+            }
+        }
+        // Hangul: no embedded face has it, so a Korean file name would draw as boxes.
+        if let Some(data) = crate::system_fonts::hangul_fallback() {
+            fonts.font_data.insert(SYSTEM_HANGUL_FALLBACK.to_owned(), data);
+            for stack in fonts.families.values_mut() {
+                stack.push(SYSTEM_HANGUL_FALLBACK.to_owned());
             }
         }
         let need = match cjk {

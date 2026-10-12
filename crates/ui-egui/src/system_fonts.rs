@@ -22,6 +22,8 @@ const MAX_FACES: u32 = 16;
 const PROBE: char = '\u{0627}';
 /// Devanagari letter ka: the face must have it to cover Hindi.
 const DEVANAGARI_PROBE: char = '\u{0915}';
+/// Hangul syllable han (U+D55C): the face must have it to draw Korean.
+const HANGUL_PROBE: char = '\u{D55C}';
 /// 欢 (U+6B22): Simplified only, absent from the Japanese craft-fonts faces.
 const HANS_PROBE: char = '\u{6B22}';
 /// 說 (U+8AAA): Traditional only, absent from the Japanese craft-fonts faces.
@@ -77,6 +79,42 @@ pub fn devanagari_fallback() -> Option<Arc<FontData>> {
             devanagari_candidates().iter().find_map(|path| read(path, DEVANAGARI_PROBE, MAX_BYTES))
         })
         .clone()
+}
+
+/// The installed fallback face for Hangul (Korean file names and text), read once. `None` when
+/// it is turned off or no candidate is installed. No embedded face has Hangul.
+pub fn hangul_fallback() -> Option<Arc<FontData>> {
+    static CACHE: OnceLock<Option<Arc<FontData>>> = OnceLock::new();
+    CACHE
+        .get_or_init(|| {
+            if std::env::var_os("PDFCRAFT_SYSTEM_FONTS").is_some_and(|v| v == "0") {
+                return None;
+            }
+            hangul_candidates().iter().find_map(|path| read(path, HANGUL_PROBE, MAX_HAN_BYTES))
+        })
+        .clone()
+}
+
+/// Well-known locations of Korean faces, best first.
+fn hangul_candidates() -> Vec<PathBuf> {
+    if cfg!(windows) {
+        ["malgun.ttf", "gulim.ttc", "batang.ttc"].iter().map(|f| windows_fonts().join(f)).collect()
+    } else if cfg!(target_os = "macos") {
+        ["/System/Library/Fonts/AppleSDGothicNeo.ttc", "/System/Library/Fonts/Supplemental/AppleGothic.ttf", "/Library/Fonts/Arial Unicode.ttf"]
+            .iter()
+            .map(PathBuf::from)
+            .collect()
+    } else {
+        unix_fonts(&[
+            "opentype/noto/NotoSansCJK-Regular.ttc",
+            "google-noto-cjk/NotoSansCJK-Regular.ttc",
+            "noto-cjk/NotoSansCJK-Regular.ttc",
+            "truetype/nanum/NanumGothic.ttf",
+            "nanum/NanumGothic.ttf",
+            "naver-nanum/NanumGothic.ttf",
+            "truetype/unfonts-core/UnDotum.ttf",
+        ])
+    }
 }
 
 /// Well-known locations of Devanagari (Hindi) faces, best first.
